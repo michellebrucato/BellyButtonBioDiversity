@@ -1,61 +1,82 @@
 // create metadata panel 
 function buildMetadata(sample) {
-  
-  d3.json(`/metadata/${sample}`).then((data) =>{
+  d3.json("/metadata/" + sample).then(data => {
 
-      let panel = d3.select("#sample-metadata");
-      panel.html("")
-      Object.entries(data).forEach(([key,value])=>{
-        panel.append("p").text(`${key}:${value}`)
-      })
-  })
+    var metadata = d3.select("#sample-metadata");
+
+    metadata.html("");
+
+    Object.entries(data).forEach(([key, value]) => {
+      metadata.append("panel").html(key + " : " + value + "<br>");
+    });
+  });
 }
 
 // create Plotly visualizations 
 function buildCharts(sample) {
 
-  d3.json(`/samples/${sample}`).then((data)=>{
+  d3.json("/samples/" + sample).then(data => {
 
-    const otu_ids = data.otu_ids
-    const otu_labels = data.otu_labels
-    const sample_values = data.sample_values
-    
-    // pie chart  
-    let pieData = [
+    // Plotly bubble chart
+    var bubbleData = [
       {
-        values: sample_values.sort((a,b)=> b-a).slice(0,10),
-        labels: otu_ids,
-        hovertext: otu_labels,
-        type: "pie",
-        hoverinfo: "hovertext"
+        x: data.otu_ids,
+        y: data.sample_values,
+        text: data.otu_labels,
+        mode: "markers",
+        marker: {
+          color: data.otu_ids,
+          size: data.sample_values,
+          colorscale: "viridis"
+        }
       }
-    ]
-    let pieLayout = {
-      margin: {t: 0, l: 0}
-    };
-    Plotly.plot("pie",pieData, pieLayout)
-  })
+    ];
 
-  // bubble chart  
-  let bubbleLayout = {
-    margin: {t: 15},
-    xaxis: {title: "OTU ID"}
-  }
- 
-  let bubbleData = [{
-    x: otu_ids,
-    y: sample_values,
-    text: otu_labels,
-    mode: "markers",
-    marker: {
-      size: sample_values,
-      color: otu_ids,
-    }
-  }]
-  Plotly.plot("bubble", bubbleData, bubbleLayout);
+    var bubbleLayout = {
+      title: "Samples per OTU ID",
+      showlegend: false,
+      height: 600,
+      width: 1200,
+      title: "Samples per OTU ID",
+      xaxis: {
+        tittle: {
+          text: "OTU ID"
+        }
+      },
+      yaxis: {
+        title: {
+          text: "Sample Count"
+        }
+      }
+    };
+
+    Plotly.newPlot("bubble", bubbleData, bubbleLayout);
+    
+    // Plotly Pie Chart
+
+    var pieValues = data.sample_values.slice(0, 10);
+    var pieLabels = data.otu_ids.slice(0, 10);
+    var pieHvrTxt = data.otu_labels.slice(0, 10);
+
+    var pieData = [
+      {
+        values: pieValues,
+        labels: pieLabels,
+        hovertext: pieHvrTxt,
+        type: "pie"
+      }
+    ];
+
+    var pieLayout = {
+      height: 400,
+      width: 500,
+      title: "Top 10 Samples"
+    };
+
+    Plotly.newPlot("pie", pieData, pieLayout);
+  });
 }
 
-// initialize dashboard 
 function init() {
 
   let selector = d3.select("#selDataset");
@@ -80,4 +101,5 @@ function optionChanged(newSample) {
   buildMetadata(newSample);
 }
 
+// initialize dashboard 
 init();
